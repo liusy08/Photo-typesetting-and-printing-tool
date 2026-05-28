@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>照片打印排版工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 24px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .photo-count {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 0;
+        }
+        
+        .sidebar {
+            padding: 24px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .control-group {
+            background-color: white;
+            padding: 16px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .control-group .sub-label {
+            font-weight: 400;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .upload-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: white;
+        }
+        
+        .upload-btn:hover {
+            border-color: #4facfe;
+            background-color: #f0f8ff;
+        }
+        
+        .upload-btn svg {
+            width: 48px;
+            height: 48px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+        
+        .upload-btn:hover svg {
+            color: #4facfe;
+        }
+        
+        .upload-btn span {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        select, input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background-color: white;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        select:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+        }
+        
+        .photo-list {
+            margin-top: 20px;
+        }
+        
+        .photo-list h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        
+        .photo-thumbnails {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .thumbnail-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: visible;
+            cursor: move;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .thumbnail-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        
+        .thumbnail-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background-color: #f0f0f0;
+            transition: transform 0.3s ease;
+            transform-origin: center center;
+        }
+        
+        .thumbnail-item .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 24px;
+            height: 24px;
+            background-color: rgba(0,0,0,0.6);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .thumbnail-item:hover .remove-btn {
+            opacity: 1;
+        }
+        
+        .thumbnail-item .remove-btn:hover {
+            background-color: #dc3545;
+        }
+        
+        .thumbnail-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        
+        .thumbnail-controls {
+            position: absolute;
+            bottom: 4px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .thumbnail-item:hover .thumbnail-controls {
+            opacity: 1;
+        }
+        
+        .rotate-btn {
+            width: 28px;
+            height: 28px;
+            background-color: rgba(0,0,0,0.6);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        
+        .rotate-btn:hover {
+            background-color: #4facfe;
+        }
+        
+        .preview-area {
+            padding: 24px;
+            background-color: #fff;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+        
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .preview-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .layout-container {
+            width: 210mm;
+            height: 297mm;
+            background-color: white;
+            margin: 0 auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+        
+        .photo-grid {
+            display: grid;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .photo-item {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .photo-item img {
+            object-fit: cover;
+            transform-origin: center center;
+        }
+        
+        .print-button {
+            display: block;
+            margin: 24px auto;
+            padding: 14px 40px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .print-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(40, 167, 69, 0.4);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .info-box {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 12px;
+            border-radius: 0 6px 6px 0;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #155724;
+        }
+        
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            border-radius: 0 6px 6px 0;
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #856404;
+        }
+        
+        .dual-input {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .dual-input input {
+            flex: 1;
+        }
+        
+        #actual-layout-overlay {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border: 2px dashed #ff6b6b;
+            pointer-events: none;
+            background-color: rgba(255, 107, 107, 0.05);
+        }
+        
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+                margin: 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .container {
+                box-shadow: none;
+                margin: 0;
+                border-radius: 0;
+                max-width: none;
+            }
+            
+            .header, .sidebar, .preview-header, .print-button, #layout-info {
+                display: none !important;
+            }
+            
+            .main-content {
+                display: block;
+            }
+            
+            .preview-area {
+                padding: 0;
+                height: auto;
+                overflow: visible;
+            }
+            
+            .layout-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                page-break-inside: avoid;
+                border-radius: 0;
+                overflow: visible !important;
+            }
+            
+            .photo-grid {
+                position: absolute !important;
+                overflow: visible !important;
+            }
+            
+            .photo-item {
+                overflow: visible !important;
+            }
+            
+            .photo-item img {
+                object-fit: cover !important;
+            }
+            
+            #actual-layout-overlay {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>照片打印排版工具</h1>
+            <div class="photo-count" id="photo-count">已上传 0 张照片</div>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="upload-btn" id="upload-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span>点击或拖拽上传照片</span>
+                </div>
+                <input type="file" id="photo-upload" accept="image/*" multiple>
+                
+                <div class="photo-list hidden" id="photo-list">
+                    <h3>已上传照片</h3>
+                    <div class="photo-thumbnails" id="photo-thumbnails"></div>
+                    <button class="btn btn-danger btn-sm" id="clear-all-btn" style="margin-top: 12px; width: 100%;">清空全部</button>
+                </div>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="photo-size">照片尺寸</label>
+                        <select id="photo-size">
+                            <option value="1inch">一寸照片 (25×35mm)</option>
+                            <option value="2inch">二寸照片 (35×49mm)</option>
+                            <option value="passport">护照照片 (35×45mm)</option>
+                            <option value="custom">自定义尺寸</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group hidden" id="custom-size">
+                        <label>自定义尺寸 (mm)</label>
+                        <div class="dual-input">
+                            <input type="number" id="custom-width" placeholder="宽度" min="1">
+                            <input type="number" id="custom-height" placeholder="高度" min="1">
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="page-layout">页面布局</label>
+                        <select id="page-layout">
+                            <option value="a4">A4 (210×297mm)</option>
+                            <option value="a3">A3 (297×420mm)</option>
+                            <option value="a5">A5 (148×210mm)</option>
+                            <option value="a6">A6 (105×148mm)</option>
+                            <option value="letter">Letter (216×279mm)</option>
+                            <option value="legal">Legal (216×356mm)</option>
+                            <option value="4x6">4×6英寸 (102×152mm)</option>
+                            <option value="5x7">5×7英寸 (127×178mm)</option>
+                            <option value="8x10">8×10英寸 (203×254mm)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>照片间距 (mm)</label>
+                        <div class="dual-input">
+                            <div>
+                                <label for="gap-horizontal" class="sub-label">左右间距</label>
+                                <input type="number" id="gap-horizontal" value="5" min="0" max="20">
+                            </div>
+                            <div>
+                                <label for="gap-vertical" class="sub-label">上下间距</label>
+                                <input type="number" id="gap-vertical" value="5" min="0" max="20">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="layout-control">排版控制</label>
+                        <select id="layout-control">
+                            <option value="auto">自动计算</option>
+                            <option value="manual">手动设置</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group hidden" id="manual-layout">
+                        <label>手动设置行列数</label>
+                        <div class="dual-input">
+                            <input type="number" id="photos-per-row" placeholder="每行照片数" min="1">
+                            <input type="number" id="photos-per-column" placeholder="每列照片数" min="1">
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="actual-layout-toggle">实际页面布局</label>
+                        <select id="actual-layout-toggle">
+                            <option value="disabled">使用整个页面</option>
+                            <option value="enabled">自定义实际布局</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group hidden" id="actual-layout">
+                        <label>实际布局尺寸 (mm)</label>
+                        <div class="dual-input">
+                            <input type="number" id="actual-width" placeholder="宽度" min="1">
+                            <input type="number" id="actual-height" placeholder="高度" min="1">
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" id="generate-layout">生成排版</button>
+                </div>
+            </div>
+            
+            <div class="preview-area">
+                <div class="preview-header">
+                    <div class="preview-title">排版预览</div>
+                    <div class="info-box" id="layout-info" style="display: none;"></div>
+                </div>
+                
+                <div class="layout-container" id="layout-container">
+                    <div class="photo-grid" id="photo-grid">
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999; text-align: center;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 64px; height: 64px; margin-bottom: 16px;">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <p>请上传照片并生成排版</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="print-button" id="print-button">打印照片</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const photoSizes = {
+            '1inch': { width: 25, height: 35, name: '一寸照片' },
+            '2inch': { width: 35, height: 49, name: '二寸照片' },
+            'passport': { width: 35, height: 45, name: '护照照片' }
+        };
+        
+        const pageSizes = {
+            'a4': { width: 210, height: 297, name: 'A4' },
+            'a3': { width: 297, height: 420, name: 'A3' },
+            'a5': { width: 148, height: 210, name: 'A5' },
+            'a6': { width: 105, height: 148, name: 'A6' },
+            'letter': { width: 216, height: 279, name: 'Letter' },
+            'legal': { width: 216, height: 356, name: 'Legal' },
+            '4x6': { width: 102, height: 152, name: '4×6英寸' },
+            '5x7': { width: 127, height: 178, name: '5×7英寸' },
+            '8x10': { width: 203, height: 254, name: '8×10英寸' }
+        };
+        
+        let uploadedPhotos = [];
+        let draggedIndex = -1;
+        
+        // 更新实际布局尺寸为页面布局尺寸的一半
+        function updateActualLayoutDefaults() {
+            const pageSelect = document.getElementById('page-layout');
+            const pageSize = pageSizes[pageSelect.value];
+            if (pageSize) {
+                document.getElementById('actual-width').value = Math.floor(pageSize.width / 2);
+                document.getElementById('actual-height').value = Math.floor(pageSize.height / 2);
+            }
+        }
+
+        function initEventListeners() {
+            document.getElementById('photo-upload').addEventListener('change', handlePhotoUpload);
+            document.getElementById('upload-btn').addEventListener('click', () => {
+                document.getElementById('photo-upload').click();
+            });
+            document.getElementById('upload-btn').addEventListener('dragover', handleDragOver);
+            document.getElementById('upload-btn').addEventListener('drop', handleDrop);
+            document.getElementById('photo-size').addEventListener('change', handleSizeChange);
+            document.getElementById('layout-control').addEventListener('change', handleLayoutControlChange);
+            document.getElementById('actual-layout-toggle').addEventListener('change', (e) => {
+                handleActualLayoutToggle();
+                // 当启用自定义实际布局时，设置默认值
+                if (e.target.value === 'enabled') {
+                    updateActualLayoutDefaults();
+                    if (uploadedPhotos.length > 0) {
+                        generateLayout();
+                    }
+                }
+            });
+            document.getElementById('generate-layout').addEventListener('click', generateLayout);
+            document.getElementById('print-button').addEventListener('click', printLayout);
+            document.getElementById('clear-all-btn').addEventListener('click', clearAllPhotos);
+            
+            // 页面布局变化时，更新实际布局默认值
+            document.getElementById('page-layout').addEventListener('change', () => {
+                updateActualLayoutDefaults();
+                if (uploadedPhotos.length > 0) {
+                    generateLayout();
+                }
+            });
+            
+            // 自动适配尺寸变化
+            const autoUpdateInputs = [
+                'custom-width', 'custom-height',
+                'gap-horizontal', 'gap-vertical',
+                'photos-per-row', 'photos-per-column',
+                'actual-width', 'actual-height'
+            ];
+            
+            autoUpdateInputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', () => {
+                        if (uploadedPhotos.length > 0) {
+                            generateLayout();
+                        }
+                    });
+                    element.addEventListener('change', () => {
+                        if (uploadedPhotos.length > 0) {
+                            generateLayout();
+                        }
+                    });
+                }
+            });
+            
+            // 初始化实际布局默认值
+            updateActualLayoutDefaults();
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            document.getElementById('upload-btn').style.borderColor = '#4facfe';
+            document.getElementById('upload-btn').style.backgroundColor = '#f0f8ff';
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('upload-btn').style.borderColor = '#ddd';
+            document.getElementById('upload-btn').style.backgroundColor = 'white';
+            
+            const files = e.dataTransfer.files;
+            processFiles(files);
+        }
+        
+        function handlePhotoUpload(e) {
+            const files = e.target.files;
+            processFiles(files);
+        }
+        
+        async function processFiles(files) {
+            const validFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            
+            if (validFiles.length === 0) {
+                alert('请选择有效的图片文件');
+                return;
+            }
+            
+            for (const file of validFiles) {
+                await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        uploadedPhotos.push({
+                            id: Date.now() + Math.random(),
+                            src: e.target.result,
+                            fileName: file.name,
+                            rotation: 0
+                        });
+                        updatePhotoThumbnails();
+                        updatePhotoCount();
+                        resolve();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+            
+            document.getElementById('photo-upload').value = '';
+        }
+        
+        function updatePhotoThumbnails() {
+            const container = document.getElementById('photo-thumbnails');
+            container.innerHTML = '';
+            
+            uploadedPhotos.forEach((photo, index) => {
+                const item = document.createElement('div');
+                item.className = 'thumbnail-item';
+                item.draggable = true;
+                item.dataset.index = index;
+                
+                item.addEventListener('dragstart', (e) => {
+                    draggedIndex = index;
+                    item.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                
+                item.addEventListener('dragend', () => {
+                    draggedIndex = -1;
+                    item.classList.remove('dragging');
+                });
+                
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+                
+                item.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (draggedIndex !== -1 && draggedIndex !== index) {
+                        const draggedPhoto = uploadedPhotos[draggedIndex];
+                        uploadedPhotos.splice(draggedIndex, 1);
+                        uploadedPhotos.splice(index, 0, draggedPhoto);
+                        updatePhotoThumbnails();
+                    }
+                });
+                
+                const img = document.createElement('img');
+                img.src = photo.src;
+                img.alt = photo.fileName;
+                img.style.transform = `rotate(${photo.rotation || 0}deg)`;
+                img.style.transformOrigin = 'center center';
+                
+                const controls = document.createElement('div');
+                controls.className = 'thumbnail-controls';
+                
+                const rotateBtn = document.createElement('button');
+                rotateBtn.className = 'rotate-btn';
+                rotateBtn.innerHTML = '↻';
+                rotateBtn.title = '旋转90度';
+                rotateBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    rotatePhoto(index);
+                });
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removePhoto(index);
+                });
+                
+                controls.appendChild(rotateBtn);
+                controls.appendChild(removeBtn);
+                item.appendChild(img);
+                item.appendChild(controls);
+                container.appendChild(item);
+            });
+            
+            document.getElementById('photo-list').classList.toggle('hidden', uploadedPhotos.length === 0);
+        }
+        
+        function rotatePhoto(index) {
+            uploadedPhotos[index].rotation = (uploadedPhotos[index].rotation || 0) + 90;
+            if (uploadedPhotos[index].rotation >= 360) {
+                uploadedPhotos[index].rotation = 0;
+            }
+            updatePhotoThumbnails();
+        }
+
+        function removePhoto(index) {
+            uploadedPhotos.splice(index, 1);
+            updatePhotoThumbnails();
+            updatePhotoCount();
+        }
+        
+        function clearAllPhotos() {
+            if (uploadedPhotos.length === 0) return;
+            
+            if (confirm('确定要清空所有已上传的照片吗？')) {
+                uploadedPhotos = [];
+                updatePhotoThumbnails();
+                updatePhotoCount();
+                
+                // 清理实际布局覆盖层
+                const existingOverlay = document.getElementById('actual-layout-overlay');
+                if (existingOverlay) {
+                    existingOverlay.remove();
+                }
+                
+                // 重置照片网格到初始状态
+                const photoGrid = document.getElementById('photo-grid');
+                const layoutContainer = document.getElementById('layout-container');
+                layoutContainer.appendChild(photoGrid);
+                
+                photoGrid.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999; text-align: center;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 64px; height: 64px; margin-bottom: 16px;">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <p>请上传照片并生成排版</p>
+                    </div>
+                `;
+                
+                // 重置照片网格的位置样式
+                photoGrid.style.position = 'relative';
+                photoGrid.style.bottom = 'auto';
+                photoGrid.style.right = 'auto';
+                photoGrid.style.width = '100%';
+                photoGrid.style.height = '100%';
+            }
+        }
+        
+        function updatePhotoCount() {
+            document.getElementById('photo-count').textContent = `已上传 ${uploadedPhotos.length} 张照片`;
+        }
+        
+        function handleSizeChange() {
+            const sizeSelect = document.getElementById('photo-size');
+            document.getElementById('custom-size').classList.toggle('hidden', sizeSelect.value !== 'custom');
+        }
+        
+        function handleLayoutControlChange() {
+            const layoutControl = document.getElementById('layout-control');
+            document.getElementById('manual-layout').classList.toggle('hidden', layoutControl.value !== 'manual');
+        }
+        
+        function handleActualLayoutToggle() {
+            const toggle = document.getElementById('actual-layout-toggle');
+            document.getElementById('actual-layout').classList.toggle('hidden', toggle.value !== 'enabled');
+        }
+        
+        function getHorizontalGap() {
+            const value = parseFloat(document.getElementById('gap-horizontal').value);
+            return isNaN(value) ? 5 : value;
+        }
+        
+        function getVerticalGap() {
+            const value = parseFloat(document.getElementById('gap-vertical').value);
+            return isNaN(value) ? 5 : value;
+        }
+        
+        function generateLayout() {
+            if (uploadedPhotos.length === 0) {
+                showWarning('请先上传照片');
+                return;
+            }
+            
+            const sizeSelect = document.getElementById('photo-size');
+            const pageSelect = document.getElementById('page-layout');
+            
+            let photoSize;
+            if (sizeSelect.value === 'custom') {
+                const width = parseFloat(document.getElementById('custom-width').value);
+                const height = parseFloat(document.getElementById('custom-height').value);
+                
+                if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+                    showWarning('请输入有效的自定义尺寸');
+                    return;
+                }
+                
+                photoSize = { width, height, name: `${width}×${height}mm` };
+            } else {
+                photoSize = photoSizes[sizeSelect.value];
+            }
+            
+            const pageSize = pageSizes[pageSelect.value];
+            const horizontalGap = getHorizontalGap();
+            const verticalGap = getVerticalGap();
+            
+            const actualLayoutToggle = document.getElementById('actual-layout-toggle');
+            let actualWidth = pageSize.width;
+            let actualHeight = pageSize.height;
+            
+            if (actualLayoutToggle.value === 'enabled') {
+                const inputWidth = parseFloat(document.getElementById('actual-width').value);
+                const inputHeight = parseFloat(document.getElementById('actual-height').value);
+                
+                if (isNaN(inputWidth) || isNaN(inputHeight) || inputWidth <= 0 || inputHeight <= 0) {
+                    showWarning('请输入有效的实际布局尺寸');
+                    return;
+                }
+                
+                if (inputWidth > pageSize.width || inputHeight > pageSize.height) {
+                    showWarning('实际布局尺寸不能超过页面布局尺寸');
+                    return;
+                }
+                
+                actualWidth = inputWidth;
+                actualHeight = inputHeight;
+            }
+            
+            const availableWidth = actualWidth;
+            const availableHeight = actualHeight;
+            
+            let photosPerRow, photosPerColumn;
+            const layoutControl = document.getElementById('layout-control');
+            
+            if (layoutControl.value === 'manual') {
+                photosPerRow = parseInt(document.getElementById('photos-per-row').value);
+                photosPerColumn = parseInt(document.getElementById('photos-per-column').value);
+                
+                if (isNaN(photosPerRow) || isNaN(photosPerColumn) || photosPerRow <= 0 || photosPerColumn <= 0) {
+                    showWarning('请输入有效的行列数');
+                    return;
+                }
+                
+                const requiredWidth = photosPerRow * photoSize.width + (photosPerRow - 1) * horizontalGap;
+                const requiredHeight = photosPerColumn * photoSize.height + (photosPerColumn - 1) * verticalGap;
+                
+                if (requiredWidth > availableWidth || requiredHeight > availableHeight) {
+                    showWarning('手动设置的行列数超出实际布局范围，请调整');
+                    return;
+                }
+            } else {
+                photosPerRow = Math.floor((availableWidth + horizontalGap) / (photoSize.width + horizontalGap));
+                photosPerColumn = Math.floor((availableHeight + verticalGap) / (photoSize.height + verticalGap));
+                
+                if (photosPerRow === 0 || photosPerColumn === 0) {
+                    showWarning('所选照片尺寸过大，无法在实际布局中排列');
+                    return;
+                }
+            }
+            
+            const gridWidth = photosPerRow * photoSize.width + (photosPerRow - 1) * horizontalGap;
+            const gridHeight = photosPerColumn * photoSize.height + (photosPerColumn - 1) * verticalGap;
+            
+            // 计算照片网格在容器内居中的偏移量
+            const offsetX = (availableWidth - gridWidth) / 2;
+            const offsetY = (availableHeight - gridHeight) / 2;
+            
+            const photoGrid = document.getElementById('photo-grid');
+            photoGrid.innerHTML = '';
+            photoGrid.style.gridTemplateColumns = `repeat(${photosPerRow}, ${photoSize.width}mm)`;
+            photoGrid.style.gridTemplateRows = `repeat(${photosPerColumn}, ${photoSize.height}mm)`;
+            photoGrid.style.gap = `${verticalGap}mm ${horizontalGap}mm`;
+            photoGrid.style.width = `${gridWidth}mm`;
+            photoGrid.style.height = `${gridHeight}mm`;
+            photoGrid.style.position = 'absolute';
+            photoGrid.style.left = `${offsetX}mm`;
+            photoGrid.style.top = `${offsetY}mm`;
+            
+            const totalPhotos = photosPerRow * photosPerColumn;
+            for (let i = 0; i < totalPhotos; i++) {
+                const photoIndex = i % uploadedPhotos.length;
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item';
+                
+                const img = document.createElement('img');
+                img.src = uploadedPhotos[photoIndex].src;
+                
+                // 根据旋转角度调整照片显示
+                const rotation = uploadedPhotos[photoIndex].rotation || 0;
+                if (rotation === 90 || rotation === 270) {
+                    // 旋转90或270度时，需要调整照片尺寸来填充
+                    img.style.width = `${photoSize.height}mm`;
+                    img.style.height = `${photoSize.width}mm`;
+                } else {
+                    img.style.width = `${photoSize.width}mm`;
+                    img.style.height = `${photoSize.height}mm`;
+                }
+                
+                img.style.transform = `rotate(${rotation}deg)`;
+                img.style.objectFit = 'cover';
+                img.style.transformOrigin = 'center center';
+                
+                photoItem.appendChild(img);
+                photoGrid.appendChild(photoItem);
+            }
+            
+            const layoutContainer = document.getElementById('layout-container');
+            layoutContainer.style.width = `${pageSize.width}mm`;
+            layoutContainer.style.height = `${pageSize.height}mm`;
+            layoutContainer.style.padding = '0';
+            layoutContainer.style.position = 'relative';
+            
+            const existingOverlay = document.getElementById('actual-layout-overlay');
+            if (existingOverlay) {
+                existingOverlay.remove();
+            }
+            
+            // 如果启用了实际布局，将照片网格放在实际布局容器内
+            if (actualLayoutToggle.value === 'enabled') {
+                const actualLayoutOverlay = document.createElement('div');
+                actualLayoutOverlay.id = 'actual-layout-overlay';
+                actualLayoutOverlay.style.width = `${actualWidth}mm`;
+                actualLayoutOverlay.style.height = `${actualHeight}mm`;
+                actualLayoutOverlay.style.position = 'absolute';
+                actualLayoutOverlay.style.bottom = '0';
+                actualLayoutOverlay.style.right = '0';
+                layoutContainer.appendChild(actualLayoutOverlay);
+                
+                // 将照片网格移动到实际布局容器内
+                actualLayoutOverlay.appendChild(photoGrid);
+            } else {
+                // 未启用实际布局时，直接将照片网格放在页面容器内
+                layoutContainer.appendChild(photoGrid);
+            }
+            
+            updateLayoutInfo(photoSize, pageSize, photosPerRow, photosPerColumn, totalPhotos);
+        }
+        
+        function updateLayoutInfo(photoSize, pageSize, photosPerRow, photosPerColumn, totalPhotos) {
+            const infoBox = document.getElementById('layout-info');
+            infoBox.innerHTML = `
+                <strong>排版信息：</strong>
+                ${pageSize.name}页面上排列 ${photoSize.name} (${photoSize.width}×${photoSize.height}mm)，
+                共 ${photosPerRow}×${photosPerColumn} = ${totalPhotos} 张照片
+            `;
+            infoBox.style.display = 'block';
+        }
+        
+        function showWarning(message) {
+            const warningBox = document.createElement('div');
+            warningBox.className = 'warning-box';
+            warningBox.textContent = message;
+            warningBox.style.position = 'fixed';
+            warningBox.style.top = '20px';
+            warningBox.style.right = '20px';
+            warningBox.style.zIndex = '9999';
+            warningBox.style.maxWidth = '300px';
+            
+            document.body.appendChild(warningBox);
+            
+            setTimeout(() => {
+                warningBox.remove();
+            }, 3000);
+        }
+        
+        function printLayout() {
+            // 在打印前动态设置@page尺寸
+            const pageSelect = document.getElementById('page-layout');
+            const pageSize = pageSizes[pageSelect.value];
+            
+            // 创建或更新style元素来设置@page尺寸
+            let printStyle = document.getElementById('print-page-style');
+            if (!printStyle) {
+                printStyle = document.createElement('style');
+                printStyle.id = 'print-page-style';
+                document.head.appendChild(printStyle);
+            }
+            
+            printStyle.textContent = `
+                @page {
+                    size: ${pageSize.width}mm ${pageSize.height}mm;
+                    margin: 0;
+                }
+            `;
+            
+            // 触发打印
+            window.print();
+        }
+        
+        initEventListeners();
+    </script>
+</body>
+</html>
